@@ -11,39 +11,69 @@ public class battleManagerScript : MonoBehaviour
     public gameManagerScript GMS;
    //This is used to check if the battle has been finished
     private bool battleStatus;
-
+    
     //In: two 'unit' game Objects the initiator is the unit that initiated the attack and the recipient is the receiver
     //Out: void - units take damage or are destroyed if the hp threshold is <= 
     //Desc: This is usually called by another script which has access to the two units and then just sets the units as parameters for the function
-
+    
     public void battle(GameObject initiator, GameObject recipient)
     {
         battleStatus = true;
         var initiatorUnit = initiator.GetComponent<UnitScript>();
         var recipientUnit = recipient.GetComponent<UnitScript>();
         int initiatorAtt = initiatorUnit.attackDamage;
-
-        // Instantiate damage particle effect on the recipient
-        GameObject tempParticle = Instantiate(recipientUnit.GetComponent<UnitScript>().damagedParticle, recipient.transform.position, recipient.transform.rotation);
-        Destroy(tempParticle, 2f);
-
-        // Deal damage to the recipient only
-        recipientUnit.dealDamage(initiatorAtt);
-
-        // Check if the recipient is dead
-        if (checkIfDead(recipient))
+        int recipientAtt = recipientUnit.attackDamage;
+        //If the two units have the same attackRange then they can trade
+        if (initiatorUnit.attackRange == recipientUnit.attackRange)
         {
-            recipient.transform.parent = null;
-            recipientUnit.unitDie();
-            battleStatus = false;
-            GMS.checkIfUnitsRemain(initiator, recipient);
-            return;
+            GameObject tempParticle = Instantiate( recipientUnit.GetComponent<UnitScript>().damagedParticle,recipient.transform.position, recipient.transform.rotation);
+            Destroy(tempParticle, 2f);
+            recipientUnit.dealDamage(initiatorAtt);
+            if (checkIfDead(recipient))
+            {
+                //Set to null then remove, if the gameObject is destroyed before its removed it will not check properly
+                //This leads to the game not actually ending because the check to see if any units remains happens before the object
+                //is removed from the parent, so we need to parent to null before we destroy the gameObject.
+                recipient.transform.parent = null;
+                recipientUnit.unitDie();
+                battleStatus = false;
+                GMS.checkIfUnitsRemain(initiator, recipient);
+                return;
+            }
+
+           
+            initiatorUnit.dealDamage(recipientAtt);
+            if (checkIfDead(initiator))
+            {
+                initiator.transform.parent = null;
+                initiatorUnit.unitDie();
+                battleStatus = false;
+                GMS.checkIfUnitsRemain(initiator, recipient);
+                return;
+
+            }
+        }
+        //if the units don't have the same attack range, like a swordsman vs an archer; the recipient cannot strike back
+        else
+        {
+            GameObject tempParticle = Instantiate(recipientUnit.GetComponent<UnitScript>().damagedParticle, recipient.transform.position, recipient.transform.rotation);
+            Destroy(tempParticle, 2f);
+           
+            recipientUnit.dealDamage(initiatorAtt);
+            if (checkIfDead(recipient))
+            {
+                recipient.transform.parent = null;
+                recipientUnit.unitDie();
+                battleStatus = false;
+                GMS.checkIfUnitsRemain(initiator, recipient);
+
+                return;
+            }
         }
 
-        // If the initiator is not supposed to take damage, skip dealing damage to the initiator
         battleStatus = false;
-    }
 
+    }
 
     //In: gameObject to check
     //Out: boolean - true if unit is dead, false otherwise
