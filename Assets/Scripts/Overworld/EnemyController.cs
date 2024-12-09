@@ -16,7 +16,7 @@ public class EnemyController : MonoBehaviour
     {
         target = PlayerManager.instance.player.transform;
         agent = GetComponent<NavMeshAgent>();
-        agent.updateRotation = false; // Disable automatic rotation
+        agent.updateRotation = false;
     }
 
     // Update is called once per frame
