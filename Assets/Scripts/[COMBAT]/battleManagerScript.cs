@@ -4,18 +4,19 @@ using UnityEngine;
 
 public class battleManagerScript : MonoBehaviour
 {
-    //This script is for the battle system that this game uses
-    //The following variables are public for easy setting in the inspector
-    //They can be set to private if you can pull them into the inspector
+    // This script is for the battle system that this game uses
     public camShakeScript CSS;
     public gameManagerScript GMS;
-   //This is used to check if the battle has been finished
+
+    // This is used to check if the battle has been finished
     private bool battleStatus;
 
-    //In: two 'unit' game Objects the initiator is the unit that initiated the attack and the recipient is the receiver
+    // Add TileDisabler reference
+    public TileDisabler tileDisabler;
+
+    //In: two 'unit' gameObjects the initiator is the unit that initiated the attack and the recipient is the receiver
     //Out: void - units take damage or are destroyed if the hp threshold is <= 
     //Desc: This is usually called by another script which has access to the two units and then just sets the units as parameters for the function
-
     public void battle(GameObject initiator, GameObject recipient)
     {
         battleStatus = true;
@@ -37,13 +38,19 @@ public class battleManagerScript : MonoBehaviour
             recipientUnit.unitDie();
             battleStatus = false;
             GMS.checkIfUnitsRemain(initiator, recipient);
+
+            // Disable the tile when the recipient dies (or based on any other condition you want)
+            if (tileDisabler != null)
+            {
+                tileDisabler.DisableTile();
+            }
+
             return;
         }
 
         // If the initiator is not supposed to take damage, skip dealing damage to the initiator
         battleStatus = false;
     }
-
 
     //In: gameObject to check
     //Out: boolean - true if unit is dead, false otherwise
@@ -75,59 +82,47 @@ public class battleManagerScript : MonoBehaviour
         Vector3 startingPos = unit.transform.position;
         Vector3 endingPos = enemy.transform.position;
         unit.GetComponent<UnitScript>().setWalkingAnimation();
+
         while (elapsedTime < .25f)
         {
-           
-            unit.transform.position = Vector3.Lerp(startingPos, startingPos+((((endingPos - startingPos) / (endingPos - startingPos).magnitude)).normalized*.5f), (elapsedTime / .25f));
+            unit.transform.position = Vector3.Lerp(startingPos, startingPos + (((endingPos - startingPos) / (endingPos - startingPos).magnitude)).normalized * .5f, (elapsedTime / .25f));
             elapsedTime += Time.deltaTime;
-            
+
             yield return new WaitForEndOfFrame();
         }
-        
-        
-        
+
         while (battleStatus)
         {
-           
-            StartCoroutine(CSS.camShake(.2f,unit.GetComponent<UnitScript>().attackDamage,getDirection(unit,enemy)));
-            if(unit.GetComponent<UnitScript>().attackRange == enemy.GetComponent<UnitScript>().attackRange && enemy.GetComponent<UnitScript>().currentHealthPoints - unit.GetComponent<UnitScript>().attackDamage > 0)
+            StartCoroutine(CSS.camShake(.2f, unit.GetComponent<UnitScript>().attackDamage, getDirection(unit, enemy)));
+
+            if (unit.GetComponent<UnitScript>().attackRange == enemy.GetComponent<UnitScript>().attackRange && enemy.GetComponent<UnitScript>().currentHealthPoints - unit.GetComponent<UnitScript>().attackDamage > 0)
             {
                 StartCoroutine(unit.GetComponent<UnitScript>().displayDamageEnum(enemy.GetComponent<UnitScript>().attackDamage));
                 StartCoroutine(enemy.GetComponent<UnitScript>().displayDamageEnum(unit.GetComponent<UnitScript>().attackDamage));
             }
-           
             else
             {
                 StartCoroutine(enemy.GetComponent<UnitScript>().displayDamageEnum(unit.GetComponent<UnitScript>().attackDamage));
             }
-            
-            //unit.GetComponent<UnitScript>().displayDamage(enemy.GetComponent<UnitScript>().attackDamage);
-            //enemy.GetComponent<UnitScript>().displayDamage(unit.GetComponent<UnitScript>().attackDamage);
-            
+
+            // Call battle function
             battle(unit, enemy);
-            
+
             yield return new WaitForEndOfFrame();
         }
-        
+
         if (unit != null)
         {
-           StartCoroutine(returnAfterAttack(unit, startingPos));
-          
+            StartCoroutine(returnAfterAttack(unit, startingPos));
         }
-       
-        
-
-       
-        //unit.GetComponent<UnitScript>().wait();
-
     }
 
     //In: unit that is returning to its position, the endPoint vector to return to
     //Out: The unit returns back to its location
     //Desc: the gameObject in the parameter is returned to the endPoint
-    public IEnumerator returnAfterAttack(GameObject unit, Vector3 endPoint) {
+    public IEnumerator returnAfterAttack(GameObject unit, Vector3 endPoint)
+    {
         float elapsedTime = 0;
-        
 
         while (elapsedTime < .30f)
         {
@@ -135,11 +130,9 @@ public class battleManagerScript : MonoBehaviour
             elapsedTime += Time.deltaTime;
             yield return new WaitForEndOfFrame();
         }
-        
+
         unit.GetComponent<UnitScript>().setWaitIdleAnimation();
         unit.GetComponent<UnitScript>().wait();
-       
-        
     }
 
     //In: two 'unit' gameObjects 
@@ -151,9 +144,4 @@ public class battleManagerScript : MonoBehaviour
         Vector3 endingPos = enemy.transform.position;
         return (((endingPos - startingPos) / (endingPos - startingPos).magnitude)).normalized;
     }
-    
-
-
-
-
 }
