@@ -183,7 +183,13 @@ public class UnitScript : MonoBehaviour
     }
     public void dealDamage(int x)
     {
-        currentHealthPoints = currentHealthPoints - x;
+        currentHealthPoints -= x;
+
+        if (currentHealthPoints < 0)
+        {
+            currentHealthPoints = 0;
+        }
+
         updateHealthUI();
     }
     public void wait()
