@@ -14,6 +14,16 @@ public class PlayerController : MonoBehaviour
     public Transform groundPoint;
     private bool isGrounded;
 
+    public Animator anim;
+
+    private bool movingBackwards;
+
+    public bool flipped;
+    public float flipspeed;
+
+    Quaternion flipleft = Quaternion.Euler(0, -180, 0);
+    Quaternion flipright = Quaternion.Euler(0, 0, 0);
+
     // Start is called before the first frame update
     void Start()
     {
@@ -25,29 +35,37 @@ public class PlayerController : MonoBehaviour
 
     // Update is called once per frame
     void Update()
-    {
-        // Get input
+    {   
         moveInput.x = Input.GetAxis("Horizontal");
         moveInput.y = Input.GetAxis("Vertical");
         moveInput.Normalize();
 
-        // Calculate movement direction relative to the camera
         Vector3 camForward = cameraTransform.forward;
         Vector3 camRight = cameraTransform.right;
 
-        // Remove the y component to ensure movement stays horizontal
         camForward.y = 0;
         camRight.y = 0;
 
-        // Normalize the vectors to maintain consistent speed
         camForward.Normalize();
         camRight.Normalize();
 
-        // Combine input with camera direction
         Vector3 moveDirection = (camRight * moveInput.x + camForward * moveInput.y) * moveSpeed;
         theRB.velocity = new Vector3(moveDirection.x, theRB.velocity.y, moveDirection.z);
 
-        // Ground check using raycast
+        anim.SetFloat("moveSpeed", theRB.velocity.magnitude);
+
+        if (!flipped && moveInput.x < 0)
+        {
+            flipped = true;
+        }else if (flipped && moveInput.x > 0)
+        {
+            flipped = false;
+        }
+
+        if (flipped) transform.rotation = Quaternion.Slerp(transform.rotation, flipleft, flipspeed * Time.deltaTime);
+        else if (!flipped) transform.rotation = Quaternion.Slerp(transform.rotation, flipright, flipspeed * Time.deltaTime);
+
+
         RaycastHit hit;
         if (Physics.Raycast(groundPoint.position, Vector3.down, out hit, .3f, whatIsGround))
         {
@@ -58,10 +76,18 @@ public class PlayerController : MonoBehaviour
             isGrounded = false;
         }
 
-        // Jump logic
         if (Input.GetButtonDown("Jump") && isGrounded)
         {
             theRB.velocity += new Vector3(0f, jumpForce, 0f);
         }
+
+        if (!movingBackwards && moveInput.y > 0)
+        {
+            movingBackwards = true;
+        } else if (movingBackwards && moveInput.y < 0)
+        {
+            movingBackwards = false;
+        }
+        anim.SetBool("movingBackwards", movingBackwards);
     }
 }
