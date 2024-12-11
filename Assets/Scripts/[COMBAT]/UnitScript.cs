@@ -10,33 +10,34 @@ public class UnitScript : MonoBehaviour
     public int x;
     public int y;
 
-    //This is a low tier idea, don't use it 
+    // This is a low-tier idea, don't use it 
     public bool coroutineRunning;
 
-    //Meta defining play here
+    // Meta defining play here
     public Queue<int> movementQueue;
     public Queue<int> combatQueue;
-    //This global variable is used to increase the units movementSpeed when travelling on the board
+    // This global variable is used to increase the units movementSpeed when travelling on the board
     public float visualMovementSpeed = .15f;
 
-    //Animator
+    // Animator
     public Animator animator;
-
 
     public GameObject tileBeingOccupied;
 
     public GameObject damagedParticle;
-    //UnitStats
+    // UnitStats
     public string unitName;
-    public int moveSpeed = 2;    
+    public int moveSpeed = 2;
     public int attackRange = 1;
     public int attackDamage = 1;
     public int maxHealthPoints = 5;
     public int currentHealthPoints;
     public Sprite unitSprite;
+    public int movementRange = 5; // Maximum number of tiles the unit can move.
+
 
     [Header("UI Elements")]
-    //Unity UI References
+    // Unity UI References
     public Canvas healthBarCanvas;
     public TMP_Text hitPointsText;
     public Image healthBar;
@@ -44,31 +45,28 @@ public class UnitScript : MonoBehaviour
     public Canvas damagePopupCanvas;
     public TMP_Text damagePopupText;
     public Image damageBackdrop;
-    
 
-    //This may change in the future if 2d sprites are used instead
-    //public Material unitMaterial;
-    //public Material unitWaitMaterial;
+    // Reference to game manager (assign in the inspector)
+    public gameManagerScript gameManager;
 
     public tileMapScript map;
 
-    //Location for positional update
+    // Location for positional update
     public Transform startPoint;
     public Transform endPoint;
     public float moveSpeedTime = 1f;
-    
-    //3D Model or 2D Sprite variables to check which version to use
-    //Make sure only one of them are enabled in the inspector
-    //public GameObject holder3D;
+
+    // 3D Model or 2D Sprite variables to check which version to use
+    // Make sure only one of them is enabled in the inspector
+    // public GameObject holder3D;
     public GameObject holder2D;
     // Total distance between the markers.
     private float journeyLength;
 
-    //Boolean to startTravelling
+    // Boolean to start Travelling
     public bool unitInMovement;
 
-
-    //Enum for unit states
+    // Enum for unit states
     public enum movementStates
     {
         Unselected,
@@ -77,36 +75,38 @@ public class UnitScript : MonoBehaviour
         Wait
     }
     public movementStates unitMoveState;
-   
-    //Pathfinding
 
+    void Start()
+    {
+        if (map == null)
+        {
+            Debug.LogError("TileMapScript is not assigned in UnitScript. Assign it via Inspector or script.");
+        }
+    }
+
+    // Pathfinding
     public List<Node> path = null;
 
-    //Path for moving unit's transform
+    // Path for moving unit's transform
     public List<Node> pathForMovement = null;
     public bool completedMovement = false;
 
     private void Awake()
     {
-
         animator = holder2D.GetComponent<Animator>();
         movementQueue = new Queue<int>();
         combatQueue = new Queue<int>();
-       
-        
+
         x = (int)transform.position.x;
         y = (int)transform.position.z;
         unitMoveState = movementStates.Unselected;
         currentHealthPoints = maxHealthPoints;
         hitPointsText.SetText(currentHealthPoints.ToString());
-        
-     
     }
 
     public void LateUpdate()
     {
         healthBarCanvas.transform.forward = Camera.main.transform.forward;
-        //damagePopupCanvas.transform.forward = Camera.main.transform.forward;
         holder2D.transform.forward = Camera.main.transform.forward;
     }
 
@@ -120,20 +120,17 @@ public class UnitScript : MonoBehaviour
         {
             StartCoroutine(moveOverSeconds(transform.gameObject, path[path.Count - 1]));
         }
-        
-     }
+    }
 
-   
     public void moveAgain()
     {
-        
         path = null;
         setMovementState(0);
         completedMovement = false;
         gameObject.GetComponentInChildren<SpriteRenderer>().color = Color.white;
         setIdleAnimation();
-        //gameObject.GetComponentInChildren<Renderer>().material = unitMaterial;
     }
+
     public movementStates getMovementStateEnum(int i)
     {
         if (i == 0)
@@ -153,13 +150,13 @@ public class UnitScript : MonoBehaviour
             return movementStates.Wait;
         }
         return movementStates.Unselected;
-        
     }
+
     public void setMovementState(int i)
     {
         if (i == 0)
         {
-            unitMoveState =  movementStates.Unselected;
+            unitMoveState = movementStates.Unselected;
         }
         else if (i == 1)
         {
@@ -173,25 +170,32 @@ public class UnitScript : MonoBehaviour
         {
             unitMoveState = movementStates.Wait;
         }
-       
-
     }
+
     public void updateHealthUI()
     {
         healthBar.fillAmount = (float)currentHealthPoints / maxHealthPoints;
         hitPointsText.SetText(currentHealthPoints.ToString());
     }
+
     public void dealDamage(int x)
     {
-        currentHealthPoints = currentHealthPoints - x;
+        currentHealthPoints -= x;
+
+        if (currentHealthPoints <= 0)
+        {
+            currentHealthPoints = 0;
+            unitDie();
+        }
+
         updateHealthUI();
     }
+
     public void wait()
     {
-
         gameObject.GetComponentInChildren<SpriteRenderer>().color = Color.gray;
-        //gameObject.GetComponentInChildren<Renderer>().material = unitWaitMaterial;
     }
+
     public void changeHealthBarColour(int i)
     {
         if (i == 0)
@@ -200,101 +204,115 @@ public class UnitScript : MonoBehaviour
         }
         else if (i == 1)
         {
-           
             healthBar.color = Color.red;
         }
     }
+
     public void unitDie()
     {
         if (holder2D.activeSelf)
         {
+            setDieAnimation();
             StartCoroutine(fadeOut());
             StartCoroutine(checkIfRoutinesRunning());
-           
+
+            // Call win function from gameManagerScript after the unit dies
+            if (gameManager != null)
+            {
+                gameManager.win(); // Trigger win UI to display
+            }
         }
-       
-        //Destroy(gameObject,2f);
-        /*
-        Renderer rend = GetComponentInChildren<SpriteRenderer>();
-        Color c = rend.material.color;
-        c.a = 0f;
-        rend.material.color = c;
-        StartCoroutine(fadeOut(rend));*/
-       
     }
+
     public IEnumerator checkIfRoutinesRunning()
     {
-        while (combatQueue.Count>0)
+        while (movementQueue.Count > 0 || combatQueue.Count > 0)
         {
-          
             yield return new WaitForEndOfFrame();
         }
-        
-        Destroy(gameObject);
 
-    }    
+        Destroy(gameObject);
+    }
+
     public IEnumerator fadeOut()
     {
-
         combatQueue.Enqueue(1);
-        //setDieAnimation();
-        //yield return new WaitForSeconds(animator.GetCurrentAnimatorStateInfo(0).length);
-        Renderer rend = GetComponentInChildren<SpriteRenderer>();
-        
-        for (float f = 1f; f >= .05; f -= 0.01f)
+
+        while (combatQueue.Count > 0)
         {
-            Color c = rend.material.color;
-            c.a = f;
-            rend.material.color = c;
             yield return new WaitForEndOfFrame();
         }
-        combatQueue.Dequeue();
-       
 
+        Destroy(gameObject);
+        combatQueue.Dequeue();
     }
-    public IEnumerator moveOverSeconds(GameObject objectToMove,Node endNode)
+
+    public IEnumerator moveOverSeconds(GameObject objectToMove, Node endNode)
     {
         movementQueue.Enqueue(1);
 
-        //remove first thing on path because, its the tile we are standing on
-        
-        path.RemoveAt(0);
+        path.RemoveAt(0);  // Remove the current node from the path
+
+        // Move the unit along the path
         while (path.Count != 0)
         {
-            
             Vector3 endPos = map.tileCoordToWorldCoord(path[0].x, path[0].y);
-            objectToMove.transform.position = Vector3.Lerp(transform.position, endPos, visualMovementSpeed);
-            if ((transform.position - endPos).sqrMagnitude < 0.001)
-            {
+            objectToMove.transform.position = Vector3.Lerp(objectToMove.transform.position, endPos, visualMovementSpeed);
 
-                path.RemoveAt(0);
-              
+            if ((objectToMove.transform.position - endPos).sqrMagnitude < 0.001)
+            {
+                path.RemoveAt(0); // Remove the node once the unit reaches it
             }
+
             yield return new WaitForEndOfFrame();
         }
+
+        // After the movement completes, position the unit at the final tile
         visualMovementSpeed = 0.15f;
-        transform.position = map.tileCoordToWorldCoord(endNode.x, endNode.y);
+        objectToMove.transform.position = map.tileCoordToWorldCoord(endNode.x, endNode.y);
 
-        x = endNode.x;
-        y = endNode.y;
-        tileBeingOccupied.GetComponent<ClickableTileScript>().unitOnTile = null;
-        tileBeingOccupied = map.tilesOnMap[x, y];
+        // Update unit's x and y position to the new tile
+        UnitScript unitScript = objectToMove.GetComponent<UnitScript>();
+        if (unitScript != null)
+        {
+            unitScript.x = endNode.x;
+            unitScript.y = endNode.y;
+        }
+
+        // Update the tiles
+        if (tileBeingOccupied != null)
+        {
+            ClickableTileScript oldTileScript = tileBeingOccupied.GetComponent<ClickableTileScript>();
+            if (oldTileScript != null)
+            {
+                oldTileScript.SetUnitOnTile(null); // Clear the old tile
+            }
+        }
+
+        tileBeingOccupied = map.tilesOnMap[endNode.x, endNode.y];
+        if (tileBeingOccupied != null)
+        {
+            ClickableTileScript newTileScript = tileBeingOccupied.GetComponent<ClickableTileScript>();
+            if (newTileScript != null)
+            {
+                newTileScript.SetUnitOnTile(objectToMove); // Update the new tile
+            }
+        }
+
         movementQueue.Dequeue();
-
     }
+
 
 
 
     public IEnumerator displayDamageEnum(int damageTaken)
     {
-
         combatQueue.Enqueue(1);
-       
         damagePopupText.SetText(damageTaken.ToString());
         damagePopupCanvas.enabled = true;
-        for (float f = 1f; f >=-0.01f; f -= 0.01f)
+
+        for (float f = 1f; f >= -0.01f; f -= 0.01f)
         {
-            
             Color backDrop = damageBackdrop.GetComponent<Image>().color;
             Color damageValue = damagePopupText.color;
 
@@ -302,23 +320,32 @@ public class UnitScript : MonoBehaviour
             damageValue.a = f;
             damageBackdrop.GetComponent<Image>().color = backDrop;
             damagePopupText.color = damageValue;
-           yield return new WaitForEndOfFrame();
+
+            yield return new WaitForEndOfFrame();
         }
 
-        //damagePopup.enabled = false;
         combatQueue.Dequeue();
-       
     }
+
+    public bool IsAIControlled()
+    {
+        UnitAI unitAI = GetComponent<UnitAI>();
+        return unitAI != null && unitAI.enabled;
+    }
+
+
     public void resetPath()
     {
         path = null;
         completedMovement = false;
     }
+
     public void displayDamage(int damageTaken)
     {
         damagePopupCanvas.enabled = true;
         damagePopupText.SetText(damageTaken.ToString());
     }
+
     public void disableDisplayDamage()
     {
         damagePopupCanvas.enabled = false;
@@ -326,13 +353,14 @@ public class UnitScript : MonoBehaviour
 
     public void setSelectedAnimation()
     {
-        
         animator.SetTrigger("toSelected");
     }
+
     public void setIdleAnimation()
-    {        
+    {
         animator.SetTrigger("toIdle");
     }
+
     public void setWalkingAnimation()
     {
         animator.SetTrigger("toWalking");
@@ -340,16 +368,17 @@ public class UnitScript : MonoBehaviour
 
     public void setAttackAnimation()
     {
-       animator.SetTrigger("toAttacking");
+        animator.SetTrigger("toAttacking");
     }
+
     public void setWaitIdleAnimation()
     {
-        
         animator.SetTrigger("toIdleWait");
     }
-       
+
     public void setDieAnimation()
     {
         animator.SetTrigger("dieTrigger");
     }
 }
+

@@ -42,6 +42,7 @@ public class gameManagerScript : MonoBehaviour
     public GameObject tileBeingDisplayed;
     public bool displayingUnitInfo;
 
+
     public tileMapScript TMS;
 
     //Cursor Info for tileMapScript
@@ -82,7 +83,8 @@ public class gameManagerScript : MonoBehaviour
       
         TMS = GetComponent<tileMapScript>();
 
-        
+        draggableObjects = new List<Draggable>(FindObjectsOfType<Draggable>());
+        Debug.Log($"Draggable objects found: {draggableObjects.Count}");
     }
     //2019/10/17 there is a small blink between disable and re-enable for path, its a bit jarring, try to fix it later
     public void Update()
@@ -91,6 +93,18 @@ public class gameManagerScript : MonoBehaviour
         ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(ray, out hit))
         {
+            if (TMS.selectedUnit != null)
+            {
+                UnitScript unitScript = TMS.selectedUnit.GetComponent<UnitScript>();
+                UnitAI unitAI = TMS.selectedUnit.GetComponent<UnitAI>();
+
+                if (unitAI != null && unitAI.enabled) // AI overrides control
+                {
+                    Debug.Log("This unit is AI-controlled.");
+                    return; // Exit early to prevent further processing for player input
+                }
+            }
+
             //Update cursorLocation and unit appearing in the topLeft
             cursorUIUpdate();
             unitUIUpdate();
@@ -101,9 +115,8 @@ public class gameManagerScript : MonoBehaviour
                 if (TMS.selectedUnitMoveRange.Contains(TMS.graph[cursorX, cursorY]))
                 {
                     //Generate new path to cursor try to limit this to once per new cursor location or else its too many calculations
-                    
 
-                    
+
                     if (cursorX != TMS.selectedUnit.GetComponent<UnitScript>().x || cursorY != TMS.selectedUnit.GetComponent<UnitScript>().y)
                     {
                         if (!unitPathExists&&TMS.selectedUnit.GetComponent<UnitScript>().movementQueue.Count==0)
@@ -177,6 +190,10 @@ public class gameManagerScript : MonoBehaviour
         }
         
     }
+
+
+
+
     //In: 
     //Out: void
     //Desc: sets the current player Text in the UI
@@ -196,8 +213,13 @@ public class gameManagerScript : MonoBehaviour
         {
             currentTeam = 0;
         }
-        
+
+        Debug.Log($"Switched to team {currentTeam}");
+        NotifyDraggableObjects(); // Notify Draggable objects about the turn change
     }
+
+
+
 
     //In: int i, the index for each team
     //Out: gameObject team
@@ -232,24 +254,31 @@ public class gameManagerScript : MonoBehaviour
     //Desc: ends the turn and plays the animation
     public void endTurn()
     {
-        
         if (TMS.selectedUnit == null)
         {
             switchCurrentPlayer();
-            if (currentTeam == 1)
+
+            // Play phase change animations
+            if (currentTeam == 1) // Assuming Team 1 is AI
             {
                 playerPhaseAnim.SetTrigger("slideLeftTrigger");
-                playerPhaseText.SetText("Unit 2 Phase");
+                playerPhaseText.SetText("AI Phase");
+
+                HandleAITurn();
             }
-            else if (currentTeam == 0)
+            else if (currentTeam == 0) // Assuming Team 0 is Player
             {
                 playerPhaseAnim.SetTrigger("slideRightTrigger");
-                playerPhaseText.SetText("Unit 1 Phase");
+                playerPhaseText.SetText("Player Phase");
             }
+
             teamHealthbarColorUpdate();
             setCurrentTeamUI();
+
         }
     }
+
+
 
     //In: attacking unit and receiving unit
     //Out: void
@@ -265,75 +294,49 @@ public class gameManagerScript : MonoBehaviour
     //In:
     //Out: void
     //Desc: updates the cursor for the UI
+    private GameObject previouslyHoveredTileCursor; // Tracks the last hovered tile's cursor
+
     public void cursorUIUpdate()
     {
-       //If we are mousing over a tile, highlight it
-        if (hit.transform.CompareTag("Tile"))
+        // Disable cursor on previously hovered tile
+        if (previouslyHoveredTileCursor != null)
         {
-            if (tileBeingDisplayed == null)
-            {
-                selectedXTile = hit.transform.gameObject.GetComponent<ClickableTileScript>().tileX;
-                selectedYTile = hit.transform.gameObject.GetComponent<ClickableTileScript>().tileY;
-                cursorX = selectedXTile;
-                cursorY = selectedYTile;
-                TMS.quadOnMapCursor[selectedXTile, selectedYTile].GetComponent<MeshRenderer>().enabled = true;
-                tileBeingDisplayed = hit.transform.gameObject;
-                
-            }
-            else if (tileBeingDisplayed != hit.transform.gameObject)
-            {
-                selectedXTile = tileBeingDisplayed.GetComponent<ClickableTileScript>().tileX;
-                selectedYTile = tileBeingDisplayed.GetComponent<ClickableTileScript>().tileY;
-                TMS.quadOnMapCursor[selectedXTile, selectedYTile].GetComponent<MeshRenderer>().enabled = false;
-
-                selectedXTile = hit.transform.gameObject.GetComponent<ClickableTileScript>().tileX;
-                selectedYTile = hit.transform.gameObject.GetComponent<ClickableTileScript>().tileY;
-                cursorX = selectedXTile;
-                cursorY = selectedYTile;
-                TMS.quadOnMapCursor[selectedXTile, selectedYTile].GetComponent<MeshRenderer>().enabled = true;
-                tileBeingDisplayed = hit.transform.gameObject;
-                
-            }
-
+            previouslyHoveredTileCursor.GetComponent<Renderer>().enabled = false;
         }
-        //If we are mousing over a unit, highlight the tile that the unit is occupying
-        else if (hit.transform.CompareTag("Unit"))
+
+        if (hit.transform.CompareTag("Unit"))
         {
-            if (tileBeingDisplayed == null)
+            UnitScript hoveredUnit = hit.transform.parent.GetComponent<UnitScript>();
+            if (hoveredUnit != null)
             {
-                selectedXTile = hit.transform.parent.gameObject.GetComponent<UnitScript>().x;
-                selectedYTile = hit.transform.parent.gameObject.GetComponent<UnitScript>().y;
-                cursorX = selectedXTile;
-                cursorY = selectedYTile;
-                TMS.quadOnMapCursor[selectedXTile, selectedYTile].GetComponent<MeshRenderer>().enabled = true;
-                tileBeingDisplayed = hit.transform.parent.gameObject.GetComponent<UnitScript>().tileBeingOccupied;
+                cursorX = hoveredUnit.x;
+                cursorY = hoveredUnit.y;
 
-            }
-            else if (tileBeingDisplayed != hit.transform.gameObject)
-            {
-                if (hit.transform.parent.gameObject.GetComponent<UnitScript>().movementQueue.Count == 0)
-                {
-                    selectedXTile = tileBeingDisplayed.GetComponent<ClickableTileScript>().tileX;
-                    selectedYTile = tileBeingDisplayed.GetComponent<ClickableTileScript>().tileY;
-                    TMS.quadOnMapCursor[selectedXTile, selectedYTile].GetComponent<MeshRenderer>().enabled = false;
+                previouslyHoveredTileCursor = TMS.quadOnMapCursor[cursorX, cursorY];
+                previouslyHoveredTileCursor.GetComponent<Renderer>().enabled = true;
 
-                    selectedXTile = hit.transform.parent.gameObject.GetComponent<UnitScript>().x;
-                    selectedYTile = hit.transform.parent.gameObject.GetComponent<UnitScript>().y;
-                    cursorX = selectedXTile;
-                    cursorY = selectedYTile;
-                    TMS.quadOnMapCursor[selectedXTile, selectedYTile].GetComponent<MeshRenderer>().enabled = true;
-                    tileBeingDisplayed = hit.transform.parent.GetComponent<UnitScript>().tileBeingOccupied;
-                   
-                }
-               
+                tileBeingDisplayed = hoveredUnit.tileBeingOccupied; // Set the displayed tile
             }
         }
-        //We aren't pointing at anything no cursor.
+        else if (hit.transform.CompareTag("Tile"))
+        {
+            cursorX = hit.transform.GetComponent<ClickableTileScript>().tileX;
+            cursorY = hit.transform.GetComponent<ClickableTileScript>().tileY;
+
+            previouslyHoveredTileCursor = TMS.quadOnMapCursor[cursorX, cursorY];
+            previouslyHoveredTileCursor.GetComponent<Renderer>().enabled = true;
+
+            tileBeingDisplayed = hit.transform.gameObject; // Set the displayed tile
+        }
         else
         {
-            TMS.quadOnMapCursor[selectedXTile, selectedYTile].GetComponent<MeshRenderer>().enabled = false;
+            tileBeingDisplayed = null; // Clear displayed tile if nothing is hovered
         }
     }
+
+
+
+
 
 
     //In: 
@@ -789,6 +792,257 @@ public class gameManagerScript : MonoBehaviour
 
     }
 
-  
-   
+
+    public void HandleAITurn()
+    {
+        isAIProcessing = true;
+        NotifyDraggableObjects();
+
+        GameObject aiTeam = returnTeam(currentTeam);
+
+        foreach (Transform unit in aiTeam.transform)
+        {
+            UnitAI unitAI = unit.GetComponent<UnitAI>();
+            UnitScript unitScript = unit.GetComponent<UnitScript>();
+
+            if (unitAI != null && unitAI.enabled)
+            {
+                Node targetEnemyNode = FindNearestEnemyAdjacentTile(unitScript);
+
+                if (targetEnemyNode != null)
+                {
+                    Debug.Log($"{unit.name} is moving towards an adjacent tile of the nearest enemy.");
+                    unitAI.GeneratePathTo(targetEnemyNode);
+
+                    // Ensure AI unit moves and finalizes position
+                    StartCoroutine(MoveAIUnit(unitScript, targetEnemyNode));
+                    continue;
+                }
+                else
+                {
+                    Debug.Log($"{unit.name} has no reachable adjacent tiles near enemies.");
+                }
+            }
+        }
+
+        isAIProcessing = false;
+        NotifyDraggableObjects();
+        switchCurrentPlayer();
+    }
+
+    private IEnumerator MoveAIUnit(UnitScript unitScript, Node targetNode)
+    {
+        // Start moving the AI unit
+        Debug.Log($"AI {unitScript.name} starts moving to target ({targetNode.x}, {targetNode.y}).");
+        yield return StartCoroutine(unitScript.moveOverSeconds(unitScript.gameObject, targetNode)); // Executes movement visually
+        Debug.Log($"AI {unitScript.name} completed movement to ({unitScript.x}, {unitScript.y}).");
+
+        // Finalize the movement and update the occupied tile
+        finalizeMovementPositionAI(unitScript);
+
+        // Ensure any post-movement logic is completed
+        yield return null;
+    }
+
+    private void finalizeMovementPositionAI(UnitScript aiUnit)
+    {
+        // Step 1: Clear the previous tile's reference
+        GameObject previousTile = aiUnit.tileBeingOccupied;
+        if (previousTile != null)
+        {
+            Debug.Log($"Clearing previous tile: {previousTile.name}");
+            var previousTileScript = previousTile.GetComponent<ClickableTileScript>();
+            if (previousTileScript != null)
+            {
+                previousTileScript.SetUnitOnTile(null); // Clear the tile's reference
+            }
+            else
+            {
+                Debug.LogError($"Previous tile {previousTile.name} is missing ClickableTileScript!");
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"AI {aiUnit.name} does not have a previous tile to clear.");
+        }
+
+        // Step 2: Update the AI unit's internal position
+        int unitX = aiUnit.x;
+        int unitY = aiUnit.y;
+
+        Debug.Log($"AI {aiUnit.name} moving to new position ({unitX}, {unitY})");
+
+        // Step 3: Fetch the new tile from the tile map
+        if (TMS.tilesOnMap == null)
+        {
+            Debug.LogError("Tile map is null! Ensure the tile map is initialized before movement.");
+            return;
+        }
+
+        if (unitX < 0 || unitX >= TMS.mapSizeX || unitY < 0 || unitY >= TMS.mapSizeY)
+        {
+            Debug.LogError($"AI {aiUnit.name} attempted to move out of bounds: ({unitX}, {unitY})");
+            return;
+        }
+
+        GameObject newTile = TMS.tilesOnMap[unitX, unitY];
+        if (newTile == null)
+        {
+            Debug.LogError($"New tile at ({unitX}, {unitY}) is null in tilesOnMap!");
+            return;
+        }
+
+        // Step 4: Update the new tile's state
+        var newTileScript = newTile.GetComponent<ClickableTileScript>();
+        if (newTileScript != null)
+        {
+            Debug.Log($"Setting AI {aiUnit.name} as occupying tile ({unitX}, {unitY})");
+            newTileScript.SetUnitOnTile(aiUnit.gameObject); // Mark the tile as occupied
+        }
+        else
+        {
+            Debug.LogError($"New tile at ({unitX}, {unitY}) is missing ClickableTileScript!");
+            return;
+        }
+
+        // Step 5: Synchronize AI unit with the new tile
+        aiUnit.tileBeingOccupied = newTile;
+
+        // Validation: Ensure synchronization between tile and unit
+        if (newTileScript.unitOnTile != aiUnit.gameObject)
+        {
+            Debug.LogError($"Synchronization issue: Tile ({unitX}, {unitY}) does not reference AI {aiUnit.name}!");
+        }
+        else
+        {
+            Debug.Log($"AI {aiUnit.name}: tileBeingOccupied successfully updated to tile ({unitX}, {unitY})");
+        }
+    }
+
+
+
+
+
+
+    private Node FindNearestEnemyAdjacentTile(UnitScript aiUnit)
+    {
+        Node aiNode = TMS.graph[aiUnit.x, aiUnit.y];
+        float shortestDistance = float.MaxValue;
+        Node bestAdjacentTile = null;
+
+        foreach (Transform playerUnit in returnTeam(0).transform)
+        {
+            UnitScript playerScript = playerUnit.GetComponent<UnitScript>();
+            Node playerNode = TMS.graph[playerScript.x, playerScript.y];
+
+            foreach (Node adjacent in playerNode.neighbours)
+            {
+                // Check occupancy via ClickableTileScript
+                GameObject tileGameObject = TMS.tilesOnMap[adjacent.x, adjacent.y];
+                var tileScript = tileGameObject.GetComponent<ClickableTileScript>();
+
+                if (tileScript != null && tileScript.unitOnTile == null)
+                {
+                    float distance = Vector2.Distance(new Vector2(aiNode.x, aiNode.y), new Vector2(adjacent.x, adjacent.y));
+
+                    if (distance < shortestDistance)
+                    {
+                        shortestDistance = distance;
+                        bestAdjacentTile = adjacent;
+                    }
+                }
+            }
+        }
+
+        return bestAdjacentTile;
+    }
+
+
+
+    // Helper to pick a random Node from a HashSet
+    private Node GetRandomNodeFromSet(HashSet<Node> nodes)
+    {
+        if (nodes == null || nodes.Count == 0) return null;
+        int index = Random.Range(0, nodes.Count);
+        foreach (Node node in nodes)
+        {
+            if (index == 0) return node;
+            index--;
+        }
+        return null;
+    }
+
+
+
+    // Example: Find the nearest enemy unit
+    private Node FindNearestEnemyInMeleeRange(UnitScript aiUnit, HashSet<Node> movementRange)
+    {
+        Node aiNode = TMS.graph[aiUnit.x, aiUnit.y];
+
+        foreach (Transform playerUnit in returnTeam(0).transform) // Assuming team 0 is the player
+        {
+            UnitScript playerScript = playerUnit.GetComponent<UnitScript>();
+            Node playerNode = TMS.graph[playerScript.x, playerScript.y];
+
+            // Check if player is in melee range
+            if (movementRange.Contains(playerNode) && Vector2.Distance(new Vector2(aiNode.x, aiNode.y), new Vector2(playerNode.x, playerNode.y)) <= 1.0f)
+            {
+                return playerNode; // Return the first enemy in range
+            }
+        }
+
+        return null; // No enemies in melee range
+    }
+
+    private void PerformMeleeAttack(UnitScript aiUnit, Node targetNode)
+    {
+        GameObject enemy = TMS.tilesOnMap[targetNode.x, targetNode.y].GetComponent<ClickableTileScript>().unitOnTile;
+
+        if (enemy != null)
+        {
+            UnitScript enemyScript = enemy.GetComponent<UnitScript>();
+            StartCoroutine(TMS.BMS.attack(aiUnit.gameObject, enemy));// Assuming BMS handles combat animations
+        }
+    }
+
+    public List<Draggable> draggableObjects;
+    public void NotifyDraggableObjects()
+    {
+        bool isPlayerTurn = currentTeam == 0; // Assuming Team 0 is the Player
+        Debug.Log($"Notifying draggable objects. Is Player Turn: {isPlayerTurn}");
+
+        foreach (Draggable draggable in draggableObjects)
+        {
+            if (draggable != null)
+            {
+                draggable.SetInteractable(isPlayerTurn); // Disable during AI's turn
+            }
+        }
+    }
+
+
+    private bool isAIProcessing = false; // Used to track AI turn state
+
+    // Public read-only property to expose isAIProcessing
+    public bool IsAIProcessing
+    {
+        get { return isAIProcessing; }
+    }
+
+    // Example: Set isAIProcessing to true when AI turn starts
+    public void StartAITurn()
+    {
+        isAIProcessing = true;
+        Debug.Log("AI turn started.");
+    }
+
+    // Example: Set isAIProcessing to false when AI turn ends
+    public void EndAITurn()
+    {
+        isAIProcessing = false;
+        Debug.Log("AI turn ended.");
+    }
+
+
+
 }
