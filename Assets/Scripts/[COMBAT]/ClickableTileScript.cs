@@ -11,7 +11,6 @@ public class ClickableTileScript : MonoBehaviour
     public GameObject unitOnTile;
     public tileMapScript map;
 
-
     /*
      * This was used in Quill18Create'sTutorial, I no longer use this portion
     private void OnMouseDown()

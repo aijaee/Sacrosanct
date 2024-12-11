@@ -491,15 +491,14 @@ public class tileMapScript : MonoBehaviour
     {
         if (tilesOnMap[x, y].GetComponent<ClickableTileScript>().unitOnTile != null)
         {
-            if (tilesOnMap[x, y].GetComponent<ClickableTileScript>().unitOnTile.GetComponent<UnitScript>().teamNum != selectedUnit.GetComponent<UnitScript>().teamNum)
-            {
-                return false;
-            }
+            return false; // Tile is occupied
         }
-        return tileTypes[tiles[x, y]].isWalkable;
+
+        return tileTypes[tiles[x, y]].isWalkable; // Check if the tile type is walkable
     }
 
-    
+
+
     //In:  
     //Out: void
     //Desc: uses a raycast to see where the mouse is pointing, this is used to select units
@@ -575,15 +574,31 @@ public class tileMapScript : MonoBehaviour
     //Desc: finalizes the movement, sets the tile the unit moved to as occupied, etc
     public void finalizeMovementPosition()
     {
-        tilesOnMap[selectedUnit.GetComponent<UnitScript>().x, selectedUnit.GetComponent<UnitScript>().y].GetComponent<ClickableTileScript>().unitOnTile = selectedUnit;
-        //After a unit has been moved we will set the unitMoveState to (2) the 'Moved' state
+        // Clear the starting tile's reference
+        GameObject previousTile = selectedUnit.GetComponent<UnitScript>().tileBeingOccupied;
+        if (previousTile != null)
+        {
+            previousTile.GetComponent<ClickableTileScript>().unitOnTile = null;
+        }
 
+        // Update the new tile as occupied
+        int unitX = selectedUnit.GetComponent<UnitScript>().x;
+        int unitY = selectedUnit.GetComponent<UnitScript>().y;
 
+        GameObject newTile = tilesOnMap[unitX, unitY];
+        newTile.GetComponent<ClickableTileScript>().unitOnTile = selectedUnit;
+
+        // Update the selected unit's reference to its current tile
+        selectedUnit.GetComponent<UnitScript>().tileBeingOccupied = newTile;
+
+        // Set the unit to the "Moved" state
         selectedUnit.GetComponent<UnitScript>().setMovementState(2);
-       
-        highlightUnitAttackOptionsFromPosition();
+
+        // Highlight the new position or attack options if needed
         highlightTileUnitIsOccupying();
+        highlightUnitAttackOptionsFromPosition();
     }
+
 
 
 
@@ -592,31 +607,34 @@ public class tileMapScript : MonoBehaviour
     //Desc: selects a unit based on the cursor from the other script
     public void mouseClickToSelectUnitV2()
     {
-        
-        if (unitSelected == false && GMS.tileBeingDisplayed!=null)
+        if (unitSelected == false && GMS.tileBeingDisplayed != null)
         {
+            GameObject tile = GMS.tileBeingDisplayed;
 
-            if (GMS.tileBeingDisplayed.GetComponent<ClickableTileScript>().unitOnTile != null)
+            // Check if there is a unit on the hovered tile
+            if (tile.GetComponent<ClickableTileScript>().unitOnTile != null)
             {
-                GameObject tempSelectedUnit = GMS.tileBeingDisplayed.GetComponent<ClickableTileScript>().unitOnTile;
+                GameObject tempSelectedUnit = tile.GetComponent<ClickableTileScript>().unitOnTile;
+
+                // Ensure unit belongs to the current team and can be selected
                 if (tempSelectedUnit.GetComponent<UnitScript>().unitMoveState == tempSelectedUnit.GetComponent<UnitScript>().getMovementStateEnum(0)
-                               && tempSelectedUnit.GetComponent<UnitScript>().teamNum == GMS.currentTeam
-                               )
+                    && tempSelectedUnit.GetComponent<UnitScript>().teamNum == GMS.currentTeam)
                 {
-                    disableHighlightUnitRange();
-                    //selectedSound.Play();
+                    disableHighlightUnitRange(); // Disable any previously highlighted range
                     selectedUnit = tempSelectedUnit;
+
+                    // Set unit as selected
                     selectedUnit.GetComponent<UnitScript>().map = this;
                     selectedUnit.GetComponent<UnitScript>().setMovementState(1);
-                    selectedUnit.GetComponent<UnitScript>().setSelectedAnimation();
                     unitSelected = true;
-                    highlightUnitRange();
-                   
+
+                    highlightUnitRange(); // Highlight the selected unit's range
+                    Debug.Log("Unit selected: " + selectedUnit.name);
                 }
             }
         }
-        
-}
+    }
+
     //In:  
     //Out: void
     //Desc: finalizes the player's option, wait or attack
@@ -763,7 +781,7 @@ public class tileMapScript : MonoBehaviour
 
 
         Node unitInitialNode = graph[selectedUnit.GetComponent<UnitScript>().x, selectedUnit.GetComponent<UnitScript>().y];
-        finalMovementHighlight = getUnitMovementOptions();
+        finalMovementHighlight = getUnitMovementOptions(selectedUnit.GetComponent<UnitScript>());
         totalAttackableTiles = getUnitTotalAttackableTiles(finalMovementHighlight, attRange, unitInitialNode);
         //Debug.Log("There are this many available tiles for the unit: "+finalMovementHighlight.Count);
 
@@ -817,58 +835,42 @@ public class tileMapScript : MonoBehaviour
     //In:  
     //Out: HashSet<Node> of the tiles that can be reached by unit
     //Desc: returns the hashSet of nodes that the unit can reach from its position
-    public HashSet<Node> getUnitMovementOptions()
+    public HashSet<Node> getUnitMovementOptions(UnitScript unit)
     {
-        float[,] cost = new float[mapSizeX, mapSizeY];
-        HashSet<Node> UIHighlight = new HashSet<Node>();
-        HashSet<Node> tempUIHighlight = new HashSet<Node>();
-        HashSet<Node> finalMovementHighlight = new HashSet<Node>();      
-        int moveSpeed = selectedUnit.GetComponent<UnitScript>().moveSpeed;
-        Node unitInitialNode = graph[selectedUnit.GetComponent<UnitScript>().x, selectedUnit.GetComponent<UnitScript>().y];
+        HashSet<Node> reachableNodes = new HashSet<Node>();
+        Queue<Node> nodesToCheck = new Queue<Node>();
+        Dictionary<Node, float> nodeCosts = new Dictionary<Node, float>();
 
-        ///Set-up the initial costs for the neighbouring nodes
-        finalMovementHighlight.Add(unitInitialNode);
-        foreach (Node n in unitInitialNode.neighbours)
+        Node startNode = graph[unit.x, unit.y];
+        reachableNodes.Add(startNode);
+        nodesToCheck.Enqueue(startNode);
+        nodeCosts[startNode] = 0;
+
+        while (nodesToCheck.Count > 0)
         {
-            cost[n.x, n.y] = costToEnterTile(n.x, n.y);
-            //Debug.Log(cost[n.x, n.y]);
-            if (moveSpeed - cost[n.x, n.y] >= 0)
+            Node current = nodesToCheck.Dequeue();
+            foreach (Node neighbor in current.neighbours)
             {
-                UIHighlight.Add(n);
-            }
-        }
+                float costToEnter = costToEnterTile(neighbor.x, neighbor.y);
+                float newCost = nodeCosts[current] + costToEnter;
 
-        finalMovementHighlight.UnionWith(UIHighlight);
+                // Debug log to confirm costs and movement range calculations
+                Debug.Log($"Checking tile at ({neighbor.x}, {neighbor.y}): cost {newCost}, moveSpeed {unit.moveSpeed}");
 
-        while (UIHighlight.Count != 0)
-        {
-            foreach (Node n in UIHighlight)
-            {
-                foreach (Node neighbour in n.neighbours)
+                if (newCost <= unit.moveSpeed && !reachableNodes.Contains(neighbor))
                 {
-                    if (!finalMovementHighlight.Contains(neighbour))
-                    {
-                        cost[neighbour.x, neighbour.y] = costToEnterTile(neighbour.x, neighbour.y) + cost[n.x, n.y];
-                        //Debug.Log(cost[neighbour.x, neighbour.y]);
-                        if (moveSpeed - cost[neighbour.x, neighbour.y] >= 0)
-                        {
-                            //Debug.Log(cost[neighbour.x, neighbour.y]);
-                            tempUIHighlight.Add(neighbour);
-                        }
-                    }
+                    reachableNodes.Add(neighbor);
+                    nodeCosts[neighbor] = newCost;
+                    nodesToCheck.Enqueue(neighbor);
                 }
-
             }
-
-            UIHighlight = tempUIHighlight;
-            finalMovementHighlight.UnionWith(UIHighlight);
-            tempUIHighlight = new HashSet<Node>();
-           
         }
-        Debug.Log("The total amount of movable spaces for this unit is: " + finalMovementHighlight.Count);
-        Debug.Log("We have used the function to calculate it this time");
-        return finalMovementHighlight;
+
+        Debug.Log($"Reachable tiles count: {reachableNodes.Count}");
+        return reachableNodes;
     }
+
+
 
     //In:  finalMovement highlight and totalAttackabletiles
     //Out: a hashSet of nodes that are the combination of the two inputs
@@ -1122,6 +1124,35 @@ public class tileMapScript : MonoBehaviour
 
         }
         return false;
+    }
+
+    public Node GetRandomValidNode()
+    {
+        List<Node> validNodes = new List<Node>();
+
+        // Iterate over all nodes in the graph to find walkable, unoccupied nodes
+        for (int x = 0; x < mapSizeX; x++)
+        {
+            for (int y = 0; y < mapSizeY; y++)
+            {
+                Node node = graph[x, y];
+                if (unitCanEnterTile(x, y) && tilesOnMap[x, y].GetComponent<ClickableTileScript>().unitOnTile == null)
+                {
+                    validNodes.Add(node);
+                }
+            }
+        }
+
+        // If there are no valid nodes, return null
+        if (validNodes.Count == 0)
+        {
+            Debug.LogWarning("No valid nodes found on the map!");
+            return null;
+        }
+
+        // Return a random valid node
+        int randomIndex = Random.Range(0, validNodes.Count);
+        return validNodes[randomIndex];
     }
 
 
