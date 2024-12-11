@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class gameManagerScript : MonoBehaviour
 {
@@ -787,9 +788,9 @@ public class gameManagerScript : MonoBehaviour
     
     public void win()
     {
-        displayWinnerUI.enabled = true;
-        displayWinnerUI.GetComponentInChildren<TextMeshProUGUI>().SetText("Winner!");
-
+        //displayWinnerUI.enabled = true;
+        // displayWinnerUI.GetComponentInChildren<TextMeshProUGUI>().SetText("Winner!");
+        SceneManager.LoadScene(1);
     }
 
 
