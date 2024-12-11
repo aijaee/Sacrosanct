@@ -49,6 +49,7 @@ public class SpellManager : MonoBehaviour
     {
         unitScript.SetAttacking(true);  // Trigger attacking animation for the caster
         targetUnit.dealDamage(5);
+        targetUnit.displayDamageEnum(5);    // Show damage popup
         unitScript.SetAttacking(false); // Reset animation after casting
     }
 
@@ -56,14 +57,14 @@ public class SpellManager : MonoBehaviour
     {
         unitScript.SetAttacking(true);  // Trigger attacking animation for the caster
         targetUnit.dealDamage(10);
+        targetUnit.displayDamage(10);   // Show damage popup
         unitScript.SetAttacking(false); // Reset animation after casting
     }
 
     void SoulBarrier(UnitScript targetUnit)
     {
         unitScript.SetAttacking(true);  // Trigger attacking animation for the caster
-                                        // Check if the target unit belongs to team 0
-        if (targetUnit.teamNum == 0)
+        if (targetUnit.teamNum == 0)    // Example: Heal units from team 0
         {
             targetUnit.currentHealthPoints += 5;
 
@@ -82,6 +83,7 @@ public class SpellManager : MonoBehaviour
     {
         unitScript.SetAttacking(true);  // Trigger attacking animation for the caster
         targetUnit.dealDamage(5);
+        targetUnit.displayDamage(5);    // Show damage popup
         unitScript.SetAttacking(false); // Reset animation after casting
     }
 
@@ -89,6 +91,7 @@ public class SpellManager : MonoBehaviour
     {
         unitScript.SetAttacking(true);  // Trigger attacking animation for the caster
         targetUnit.dealDamage(10);
+        targetUnit.displayDamage(10);   // Show damage popup
         unitScript.SetAttacking(false); // Reset animation after casting
     }
 
