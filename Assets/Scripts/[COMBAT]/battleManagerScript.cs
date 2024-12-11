@@ -4,19 +4,12 @@ using UnityEngine;
 
 public class battleManagerScript : MonoBehaviour
 {
-    // This script is for the battle system that this game uses
     public camShakeScript CSS;
     public gameManagerScript GMS;
 
-    // This is used to check if the battle has been finished
     private bool battleStatus;
-
-    // Add TileDisabler reference
     public TileDisabler tileDisabler;
 
-    //In: two 'unit' gameObjects the initiator is the unit that initiated the attack and the recipient is the receiver
-    //Out: void - units take damage or are destroyed if the hp threshold is <= 
-    //Desc: This is usually called by another script which has access to the two units and then just sets the units as parameters for the function
     public void battle(GameObject initiator, GameObject recipient)
     {
         battleStatus = true;
@@ -24,14 +17,16 @@ public class battleManagerScript : MonoBehaviour
         var recipientUnit = recipient.GetComponent<UnitScript>();
         int initiatorAtt = initiatorUnit.attackDamage;
 
-        // Instantiate damage particle effect on the recipient
-        GameObject tempParticle = Instantiate(recipientUnit.GetComponent<UnitScript>().damagedParticle, recipient.transform.position, recipient.transform.rotation);
+        // Trigger damaged animation for the recipient
+        recipientUnit.SetDamaged(true);
+
+        // Instantiate damage particle effect
+        GameObject tempParticle = Instantiate(recipientUnit.damagedParticle, recipient.transform.position, recipient.transform.rotation);
         Destroy(tempParticle, 2f);
 
-        // Deal damage to the recipient only
+        // Deal damage to the recipient
         recipientUnit.dealDamage(initiatorAtt);
 
-        // Check if the recipient is dead
         if (checkIfDead(recipient))
         {
             recipient.transform.parent = null;
@@ -39,49 +34,35 @@ public class battleManagerScript : MonoBehaviour
             battleStatus = false;
             GMS.checkIfUnitsRemain(initiator, recipient);
 
-            // Disable the tile when the recipient dies (or based on any other condition you want)
             if (tileDisabler != null)
             {
                 tileDisabler.DisableTile();
             }
-
             return;
         }
 
-        // If the initiator is not supposed to take damage, skip dealing damage to the initiator
         battleStatus = false;
     }
 
-    //In: gameObject to check
-    //Out: boolean - true if unit is dead, false otherwise
-    //Desc: the health of the gameObject is checked (must be 'unit') or it'll break
     public bool checkIfDead(GameObject unitToCheck)
     {
-        if (unitToCheck.GetComponent<UnitScript>().currentHealthPoints <= 0)
-        {
-            return true;
-        }
-        return false;
+        return unitToCheck.GetComponent<UnitScript>().currentHealthPoints <= 0;
     }
 
-    //In: gameObject to destroy
-    //Out: void
-    //Desc: the gameObject in the parameter is destroyed
     public void destroyObject(GameObject unitToDestroy)
     {
         Destroy(unitToDestroy);
     }
 
-    //In: two unit gameObjects the attacker and the receiver
-    //Out: this plays the animations for the battle
-    //Desc: this function calls all the functions for the battle 
     public IEnumerator attack(GameObject unit, GameObject enemy)
     {
         battleStatus = true;
         float elapsedTime = 0;
         Vector3 startingPos = unit.transform.position;
         Vector3 endingPos = enemy.transform.position;
-        unit.GetComponent<UnitScript>().setWalkingAnimation();
+
+        // Trigger walking animation
+        unit.GetComponent<UnitScript>().SetWalking(true);
 
         while (elapsedTime < .25f)
         {
@@ -90,6 +71,10 @@ public class battleManagerScript : MonoBehaviour
 
             yield return new WaitForEndOfFrame();
         }
+
+        // Stop walking animation and trigger attack animation
+        unit.GetComponent<UnitScript>().SetWalking(false);
+        unit.GetComponent<UnitScript>().SetAttacking(true);
 
         while (battleStatus)
         {
@@ -105,11 +90,12 @@ public class battleManagerScript : MonoBehaviour
                 StartCoroutine(enemy.GetComponent<UnitScript>().displayDamageEnum(unit.GetComponent<UnitScript>().attackDamage));
             }
 
-            // Call battle function
             battle(unit, enemy);
-
             yield return new WaitForEndOfFrame();
         }
+
+        // Stop attack animation
+        unit.GetComponent<UnitScript>().SetAttacking(false);
 
         if (unit != null)
         {
@@ -117,9 +103,6 @@ public class battleManagerScript : MonoBehaviour
         }
     }
 
-    //In: unit that is returning to its position, the endPoint vector to return to
-    //Out: The unit returns back to its location
-    //Desc: the gameObject in the parameter is returned to the endPoint
     public IEnumerator returnAfterAttack(GameObject unit, Vector3 endPoint)
     {
         float elapsedTime = 0;
@@ -131,13 +114,15 @@ public class battleManagerScript : MonoBehaviour
             yield return new WaitForEndOfFrame();
         }
 
-        unit.GetComponent<UnitScript>().setWaitIdleAnimation();
+        // Trigger idle animation after returning
+        unit.GetComponent<UnitScript>().SetIdle(true);
+        unit.GetComponent<UnitScript>().SetWalking(false);
+        unit.GetComponent<UnitScript>().SetAttacking(false);
+        unit.GetComponent<UnitScript>().SetDamaged(false);
+
         unit.GetComponent<UnitScript>().wait();
     }
 
-    //In: two 'unit' gameObjects 
-    //Out: vector3 the direction that the unit needs to moveTowards 
-    //Desc: the vector3 which the unit needs to moveTowards is returned by this function
     public Vector3 getDirection(GameObject unit, GameObject enemy)
     {
         Vector3 startingPos = unit.transform.position;

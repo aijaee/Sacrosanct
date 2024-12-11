@@ -128,7 +128,7 @@ public class UnitScript : MonoBehaviour
         setMovementState(0);
         completedMovement = false;
         gameObject.GetComponentInChildren<SpriteRenderer>().color = Color.white;
-        setIdleAnimation();
+        SetIdle(true);
     }
 
     public movementStates getMovementStateEnum(int i)
@@ -212,7 +212,6 @@ public class UnitScript : MonoBehaviour
     {
         if (holder2D.activeSelf)
         {
-            setDieAnimation();
             StartCoroutine(fadeOut());
             StartCoroutine(checkIfRoutinesRunning());
 
@@ -351,34 +350,26 @@ public class UnitScript : MonoBehaviour
         damagePopupCanvas.enabled = false;
     }
 
-    public void setSelectedAnimation()
+    public void SetIdle(bool isActive)
     {
-        animator.SetTrigger("toSelected");
+        animator.SetBool("isIdle", isActive);
     }
 
-    public void setIdleAnimation()
+    public void SetWalking(bool isActive)
     {
-        animator.SetTrigger("toIdle");
+        animator.SetBool("isWalking", isActive);
     }
 
-    public void setWalkingAnimation()
+    public void SetAttacking(bool isActive)
     {
-        animator.SetTrigger("toWalking");
+        animator.SetBool("isAttacking", isActive);
     }
 
-    public void setAttackAnimation()
+    public void SetDamaged(bool isActive)
     {
-        animator.SetTrigger("toAttacking");
+        animator.SetBool("isDamaged", isActive);
     }
 
-    public void setWaitIdleAnimation()
-    {
-        animator.SetTrigger("toIdleWait");
-    }
 
-    public void setDieAnimation()
-    {
-        animator.SetTrigger("dieTrigger");
-    }
 }
 

@@ -137,12 +137,14 @@ MonoBehaviour:
   maxHealthPoints: 5
   currentHealthPoints: 0
   unitSprite: {fileID: 21300000, guid: 4d4e4199e352d7742b55d9a9a9cec317, type: 3}
+  movementRange: 5
   healthBarCanvas: {fileID: 43821925669178094}
   hitPointsText: {fileID: 43821926805037719}
   healthBar: {fileID: 43821925364857777}
   damagePopupCanvas: {fileID: 43821926641596557}
   damagePopupText: {fileID: 43821926285726091}
   damageBackdrop: {fileID: 43821926358565890}
+  gameManager: {fileID: 0}
   map: {fileID: 0}
   startPoint: {fileID: 0}
   endPoint: {fileID: 0}
@@ -729,7 +731,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 0
+  m_PresetInfoIsWorld: 1
 --- !u!114 &43821926641596555
 MonoBehaviour:
   m_ObjectHideFlags: 0

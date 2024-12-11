@@ -123,7 +123,6 @@ public class tileMapScript : MonoBehaviour
                     unitSelectedPreviousX = selectedUnit.GetComponent<UnitScript>().x;
                     unitSelectedPreviousY = selectedUnit.GetComponent<UnitScript>().y;
                     previousOccupiedTile = selectedUnit.GetComponent<UnitScript>().tileBeingOccupied;
-                    selectedUnit.GetComponent<UnitScript>().setWalkingAnimation();
                     moveUnit();
                     
                     StartCoroutine(moveUnitAndFinalize());
@@ -150,7 +149,7 @@ public class tileMapScript : MonoBehaviour
                     if (selectedUnit.GetComponent<UnitScript>().unitMoveState != selectedUnit.GetComponent<UnitScript>().getMovementStateEnum(3))
                     {
                         //unselectedSound.Play();
-                        selectedUnit.GetComponent<UnitScript>().setIdleAnimation();
+                        selectedUnit.GetComponent<UnitScript>().SetIdle(true);
                         deselectUnit();
                     }
                 }
@@ -683,7 +682,7 @@ public class tileMapScript : MonoBehaviour
                     disableHighlightUnitRange();
                     Debug.Log("ITS THE SAME UNIT JUST WAIT");
                     selectedUnit.GetComponent<UnitScript>().wait();
-                    selectedUnit.GetComponent<UnitScript>().setWaitIdleAnimation();
+                    selectedUnit.GetComponent<UnitScript>().SetIdle(true);
                     selectedUnit.GetComponent<UnitScript>().setMovementState(3);
                     deselectUnit();
 
@@ -714,7 +713,7 @@ public class tileMapScript : MonoBehaviour
                 disableHighlightUnitRange();
                 Debug.Log("ITS THE SAME UNIT JUST WAIT");
                 selectedUnit.GetComponent<UnitScript>().wait();
-                selectedUnit.GetComponent<UnitScript>().setWaitIdleAnimation();
+                selectedUnit.GetComponent<UnitScript>().SetIdle(true);
                 selectedUnit.GetComponent<UnitScript>().setMovementState(3);
                 deselectUnit();
 
@@ -1076,7 +1075,6 @@ public class tileMapScript : MonoBehaviour
             Debug.LogError("Movement finalization failed: tileBeingOccupied is null.");
         }
 
-        selectedUnit.GetComponent<UnitScript>().setSelectedAnimation();
     }
 
 

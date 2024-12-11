@@ -47,17 +47,22 @@ public class SpellManager : MonoBehaviour
     // Define the spell effects for each spell type, now accepting the target unit
     void Strike(UnitScript targetUnit)
     {
+        unitScript.SetAttacking(true);  // Trigger attacking animation for the caster
         targetUnit.dealDamage(5);
+        unitScript.SetAttacking(false); // Reset animation after casting
     }
 
     void HeavyStrike(UnitScript targetUnit)
     {
+        unitScript.SetAttacking(true);  // Trigger attacking animation for the caster
         targetUnit.dealDamage(10);
+        unitScript.SetAttacking(false); // Reset animation after casting
     }
 
     void SoulBarrier(UnitScript targetUnit)
     {
-        // Check if the target unit belongs to team 0
+        unitScript.SetAttacking(true);  // Trigger attacking animation for the caster
+                                        // Check if the target unit belongs to team 0
         if (targetUnit.teamNum == 0)
         {
             targetUnit.currentHealthPoints += 5;
@@ -70,16 +75,21 @@ public class SpellManager : MonoBehaviour
 
             targetUnit.updateHealthUI();
         }
+        unitScript.SetAttacking(false); // Reset animation after casting
     }
-
 
     void MagicBlast(UnitScript targetUnit)
     {
+        unitScript.SetAttacking(true);  // Trigger attacking animation for the caster
         targetUnit.dealDamage(5);
+        unitScript.SetAttacking(false); // Reset animation after casting
     }
 
     void MagicBarrage(UnitScript targetUnit)
     {
+        unitScript.SetAttacking(true);  // Trigger attacking animation for the caster
         targetUnit.dealDamage(10);
+        unitScript.SetAttacking(false); // Reset animation after casting
     }
+
 }
