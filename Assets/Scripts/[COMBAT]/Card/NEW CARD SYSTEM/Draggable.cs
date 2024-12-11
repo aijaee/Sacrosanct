@@ -11,19 +11,12 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
 
     private GameObject placeHolder = null;
 
-    // Reference to the SpellManager (you should assign this in the inspector)
     public SpellManager spellManager;
-
-    // Use the same SpellType enum from SpellManager
     public SpellManager.SpellType spellType;
-
-    // Reference to the UnitScript (you should assign this in the inspector)
     public UnitScript unitScript;
-
-    // Reference to the GameManager (assign in Inspector)
     public gameManagerScript gameManager;
 
-    private bool isInteractable = true; // Whether the card can be interacted with
+    private bool isInteractable = true;
 
     public void OnBeginDrag(PointerEventData eventData)
     {
@@ -84,7 +77,6 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
         this.GetComponent<CanvasGroup>().blocksRaycasts = true;
         Destroy(placeHolder);
 
-        // Perform the spell action when the drag ends
         PerformAction();
     }
 
@@ -96,26 +88,32 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
         }
     }
 
-    // Enable or disable drag interaction based on the current team
-    public void SetInteractable(bool value)
-    {
-        isInteractable = value;
-
-        // Optionally adjust the visual appearance of the card
-        CanvasGroup canvasGroup = GetComponent<CanvasGroup>();
-        if (canvasGroup != null)
-        {
-            canvasGroup.alpha = value ? 1.0f : 0.5f; // Dim the card when it's not interactable
-            canvasGroup.blocksRaycasts = value; // Prevent clicks when not interactable
-        }
-    }
-
-    // Check turn and update interactable state
-    private void Update()
+    public void UpdateInteractable()
     {
         if (gameManager != null)
         {
-            SetInteractable(gameManager.currentTeam == 0);
+            SetInteractable(gameManager.currentTeam == 0); // Enable for Player 0 only
+            Debug.Log($"Card updated: Interactable = {gameManager.currentTeam == 0}");
         }
     }
+
+    public void SetInteractable(bool value)
+    {
+        // Disable interactivity if the AI is processing its turn
+        if (gameManager != null && gameManager.IsAIProcessing)
+        {
+            value = false;
+        }
+
+
+        isInteractable = value;
+
+        CanvasGroup canvasGroup = GetComponent<CanvasGroup>();
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = value ? 1.0f : 0.5f;
+            canvasGroup.blocksRaycasts = value;
+        }
+    }
+
 }

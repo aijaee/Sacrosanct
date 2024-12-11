@@ -50,7 +50,6 @@ public class UnitAI : MonoBehaviour
             return;
         }
 
-        // Reset path
         currentPath.Clear();
         Dictionary<Node, float> dist = new Dictionary<Node, float>();
         Dictionary<Node, Node> prev = new Dictionary<Node, Node>();
@@ -80,7 +79,7 @@ public class UnitAI : MonoBehaviour
                 }
             }
 
-            if (u == target) break;
+            if (u == target || dist[u] > unitScript.movementRange) break; // Restrict to movement range.
 
             unvisited.Remove(u);
 
@@ -96,15 +95,22 @@ public class UnitAI : MonoBehaviour
         }
 
         Node current = target;
-        while (current != null)
+        while (current != null && dist[current] <= unitScript.movementRange)
         {
             currentPath.Add(current);
             current = prev[current];
         }
 
+        if (currentPath.Count == 0 || dist[target] > unitScript.movementRange)
+        {
+            Debug.LogWarning("Target is out of movement range.");
+            return;
+        }
+
         currentPath.Reverse();
         isMoving = true;
     }
+
 
     private void MoveAlongPath()
     {
@@ -138,10 +144,38 @@ public class UnitAI : MonoBehaviour
         return map.graph[x, y];
     }
 
-
     public void StopMoving()
     {
         isMoving = false;
         currentPath.Clear();
     }
+
+    public HashSet<Node> GetMovementRange(Node source)
+    {
+        HashSet<Node> movementRange = new HashSet<Node>();
+        Queue<Node> frontier = new Queue<Node>();
+        Dictionary<Node, float> costSoFar = new Dictionary<Node, float>();
+
+        frontier.Enqueue(source);
+        costSoFar[source] = 0;
+
+        while (frontier.Count > 0)
+        {
+            Node current = frontier.Dequeue();
+
+            foreach (Node neighbor in current.neighbours)
+            {
+                float newCost = costSoFar[current] + current.DistanceTo(neighbor);
+                if (newCost <= unitScript.movementRange && (!costSoFar.ContainsKey(neighbor) || newCost < costSoFar[neighbor]))
+                {
+                    costSoFar[neighbor] = newCost;
+                    frontier.Enqueue(neighbor);
+                    movementRange.Add(neighbor);
+                }
+            }
+        }
+
+        return movementRange;
+    }
+
 }

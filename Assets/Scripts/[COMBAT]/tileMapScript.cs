@@ -350,16 +350,32 @@ public class tileMapScript : MonoBehaviour
     {
         foreach (Transform team in unitsOnBoard.transform)
         {
-            //Debug.Log("Set if Tile is Occupied is Called");
-            foreach (Transform unitOnTeam in team) { 
-                int unitX = unitOnTeam.GetComponent<UnitScript>().x;
-                int unitY = unitOnTeam.GetComponent<UnitScript>().y;
-                unitOnTeam.GetComponent<UnitScript>().tileBeingOccupied = tilesOnMap[unitX, unitY];
-                tilesOnMap[unitX, unitY].GetComponent<ClickableTileScript>().unitOnTile = unitOnTeam.gameObject;
+            foreach (Transform unitOnTeam in team)
+            {
+                UnitScript unitScript = unitOnTeam.GetComponent<UnitScript>();
+                if (unitScript != null)
+                {
+                    int unitX = unitScript.x;
+                    int unitY = unitScript.y;
+
+                    GameObject tile = tilesOnMap[unitX, unitY];
+                    if (tile != null)
+                    {
+                        Debug.Log($"Assigning unit {unitOnTeam.name} to tile ({unitX}, {unitY})");
+                        unitScript.tileBeingOccupied = tile;
+                        tile.GetComponent<ClickableTileScript>().SetUnitOnTile(unitOnTeam.gameObject);
+                    }
+                    else
+                    {
+                        Debug.LogError($"Tile at ({unitX}, {unitY}) is null during initialization.");
+                    }
+                }
             }
-            
         }
     }
+
+
+
     //In: x and y position of the tile to move to
     //Out: void
     //Desc: generates the path for the selected unit
@@ -367,11 +383,11 @@ public class tileMapScript : MonoBehaviour
     public void generatePathTo(int x, int y)
     {
 
-        if (selectedUnit.GetComponent<UnitScript>().x == x && selectedUnit.GetComponent<UnitScript>().y == y){
-            Debug.Log("clicked the same tile that the unit is standing on");
+        if (selectedUnit.GetComponent<UnitScript>().x == x && selectedUnit.GetComponent<UnitScript>().y == y)
+        {
+            Debug.Log($"Unit is already on tile ({x}, {y}).");
             currentPath = new List<Node>();
             selectedUnit.GetComponent<UnitScript>().path = currentPath;
-            
             return;
         }
         if (unitCanEnterTile(x, y) == false)
@@ -574,11 +590,12 @@ public class tileMapScript : MonoBehaviour
     //Desc: finalizes the movement, sets the tile the unit moved to as occupied, etc
     public void finalizeMovementPosition()
     {
-        // Clear the starting tile's reference
+        // Clear the previous tile's reference
         GameObject previousTile = selectedUnit.GetComponent<UnitScript>().tileBeingOccupied;
         if (previousTile != null)
         {
             previousTile.GetComponent<ClickableTileScript>().unitOnTile = null;
+            Debug.Log($"Cleared previous tile: {previousTile.name}");
         }
 
         // Update the new tile as occupied
@@ -587,17 +604,20 @@ public class tileMapScript : MonoBehaviour
 
         GameObject newTile = tilesOnMap[unitX, unitY];
         newTile.GetComponent<ClickableTileScript>().unitOnTile = selectedUnit;
+        Debug.Log($"New tile set as occupied: {newTile.name}");
 
         // Update the selected unit's reference to its current tile
         selectedUnit.GetComponent<UnitScript>().tileBeingOccupied = newTile;
+        Debug.Log($"Updated tileBeingOccupied for unit: {selectedUnit.name}");
 
         // Set the unit to the "Moved" state
         selectedUnit.GetComponent<UnitScript>().setMovementState(2);
 
-        // Highlight the new position or attack options if needed
+        // Highlight the new position if needed
         highlightTileUnitIsOccupying();
         highlightUnitAttackOptionsFromPosition();
     }
+
 
 
 
@@ -1048,9 +1068,17 @@ public class tileMapScript : MonoBehaviour
         {
             yield return new WaitForEndOfFrame();
         }
+
         finalizeMovementPosition();
+
+        if (selectedUnit.GetComponent<UnitScript>().tileBeingOccupied == null)
+        {
+            Debug.LogError("Movement finalization failed: tileBeingOccupied is null.");
+        }
+
         selectedUnit.GetComponent<UnitScript>().setSelectedAnimation();
     }
+
 
 
     //In:  both units engaged in a battle

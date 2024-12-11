@@ -11,6 +11,21 @@ public class ClickableTileScript : MonoBehaviour
     public GameObject unitOnTile;
     public tileMapScript map;
 
+
+    public void SetUnitOnTile(GameObject unit)
+    {
+        unitOnTile = unit;
+        if (unit != null)
+        {
+            Debug.Log($"Unit {unit.name} moved to tile ({tileX}, {tileY})");
+        }
+        else
+        {
+            Debug.Log($"Tile ({tileX}, {tileY}) is now empty");
+        }
+    }
+
+
     /*
      * This was used in Quill18Create'sTutorial, I no longer use this portion
     private void OnMouseDown()

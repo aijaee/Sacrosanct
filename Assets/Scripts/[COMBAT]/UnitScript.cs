@@ -33,6 +33,8 @@ public class UnitScript : MonoBehaviour
     public int maxHealthPoints = 5;
     public int currentHealthPoints;
     public Sprite unitSprite;
+    public int movementRange = 5; // Maximum number of tiles the unit can move.
+
 
     [Header("UI Elements")]
     // Unity UI References
@@ -249,30 +251,59 @@ public class UnitScript : MonoBehaviour
     {
         movementQueue.Enqueue(1);
 
-        path.RemoveAt(0);
+        path.RemoveAt(0);  // Remove the current node from the path
 
+        // Move the unit along the path
         while (path.Count != 0)
         {
             Vector3 endPos = map.tileCoordToWorldCoord(path[0].x, path[0].y);
-            objectToMove.transform.position = Vector3.Lerp(transform.position, endPos, visualMovementSpeed);
+            objectToMove.transform.position = Vector3.Lerp(objectToMove.transform.position, endPos, visualMovementSpeed);
 
-            if ((transform.position - endPos).sqrMagnitude < 0.001)
+            if ((objectToMove.transform.position - endPos).sqrMagnitude < 0.001)
             {
-                path.RemoveAt(0);
+                path.RemoveAt(0); // Remove the node once the unit reaches it
             }
 
             yield return new WaitForEndOfFrame();
         }
 
+        // After the movement completes, position the unit at the final tile
         visualMovementSpeed = 0.15f;
-        transform.position = map.tileCoordToWorldCoord(endNode.x, endNode.y);
+        objectToMove.transform.position = map.tileCoordToWorldCoord(endNode.x, endNode.y);
 
-        x = endNode.x;
-        y = endNode.y;
-        tileBeingOccupied.GetComponent<ClickableTileScript>().unitOnTile = null;
-        tileBeingOccupied = map.tilesOnMap[x, y];
+        // Update unit's x and y position to the new tile
+        UnitScript unitScript = objectToMove.GetComponent<UnitScript>();
+        if (unitScript != null)
+        {
+            unitScript.x = endNode.x;
+            unitScript.y = endNode.y;
+        }
+
+        // Update the tiles
+        if (tileBeingOccupied != null)
+        {
+            ClickableTileScript oldTileScript = tileBeingOccupied.GetComponent<ClickableTileScript>();
+            if (oldTileScript != null)
+            {
+                oldTileScript.SetUnitOnTile(null); // Clear the old tile
+            }
+        }
+
+        tileBeingOccupied = map.tilesOnMap[endNode.x, endNode.y];
+        if (tileBeingOccupied != null)
+        {
+            ClickableTileScript newTileScript = tileBeingOccupied.GetComponent<ClickableTileScript>();
+            if (newTileScript != null)
+            {
+                newTileScript.SetUnitOnTile(objectToMove); // Update the new tile
+            }
+        }
+
         movementQueue.Dequeue();
     }
+
+
+
 
     public IEnumerator displayDamageEnum(int damageTaken)
     {

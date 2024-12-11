@@ -41,8 +41,6 @@ public class HoverCardDisplay : MonoBehaviour
             return;
         }
 
-        Debug.Log("Mouse entered: " + gameObject.name);
-
         // Instantiate a new Image object for each card hover and parent it to the hoverCanvas
         currentHoverCard = new GameObject("HoverCard");
         currentHoverCard.transform.SetParent(hoverCanvas.transform);
@@ -66,7 +64,7 @@ public class HoverCardDisplay : MonoBehaviour
     // This function will be called when the mouse exits the card
     public void OnMouseExit()
     {
-        Debug.Log("Mouse exited: " + gameObject.name);
+      
 
         // Destroy the hover card when the mouse exits
         if (currentHoverCard != null)

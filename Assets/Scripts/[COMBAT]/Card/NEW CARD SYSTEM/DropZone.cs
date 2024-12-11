@@ -8,7 +8,7 @@ public class DropZone : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
 
     public SpellManager spellManager; // Reference to the SpellManager (assign in Inspector)
     public UnitScript targetUnit; // The default target unit for most spells (assigned in Inspector)
-    
+
     [Tooltip("Only used for SoulBarrier. The target for the SoulBarrier spell.")]
     public UnitScript soulBarrierTargetUnit; // Special target unit for SoulBarrier spell
 

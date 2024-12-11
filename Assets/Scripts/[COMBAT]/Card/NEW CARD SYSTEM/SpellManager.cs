@@ -42,48 +42,44 @@ public class SpellManager : MonoBehaviour
                     break;
             }
         }
-        else
-        {
-            Debug.LogError("Target unit is not assigned in CastSpell!");
-        }
     }
 
     // Define the spell effects for each spell type, now accepting the target unit
     void Strike(UnitScript targetUnit)
     {
         targetUnit.dealDamage(5);
-        Debug.Log("Strike! " + targetUnit.unitName + " Health: " + targetUnit.currentHealthPoints);
     }
 
     void HeavyStrike(UnitScript targetUnit)
     {
         targetUnit.dealDamage(10);
-        Debug.Log("Heavy Strike! " + targetUnit.unitName + " Health: " + targetUnit.currentHealthPoints);
     }
 
     void SoulBarrier(UnitScript targetUnit)
     {
-        targetUnit.currentHealthPoints += 5;
-
-        // Prevent health from exceeding max health
-        if (targetUnit.currentHealthPoints > targetUnit.maxHealthPoints)
+        // Check if the target unit belongs to team 0
+        if (targetUnit.teamNum == 0)
         {
-            targetUnit.currentHealthPoints = targetUnit.maxHealthPoints;
-        }
+            targetUnit.currentHealthPoints += 5;
 
-        targetUnit.updateHealthUI();
-        Debug.Log("Soul Barrier! " + targetUnit.unitName + " Health: " + targetUnit.currentHealthPoints);
+            // Prevent health from exceeding max health
+            if (targetUnit.currentHealthPoints > targetUnit.maxHealthPoints)
+            {
+                targetUnit.currentHealthPoints = targetUnit.maxHealthPoints;
+            }
+
+            targetUnit.updateHealthUI();
+        }
     }
+
 
     void MagicBlast(UnitScript targetUnit)
     {
         targetUnit.dealDamage(5);
-        Debug.Log("Magic Blast! " + targetUnit.unitName + " Health: " + targetUnit.currentHealthPoints);
     }
 
     void MagicBarrage(UnitScript targetUnit)
     {
         targetUnit.dealDamage(10);
-        Debug.Log("Magic Barrage! " + targetUnit.unitName + " Health: " + targetUnit.currentHealthPoints);
     }
 }
