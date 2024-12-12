@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class AudioManager : MonoBehaviour
 {
@@ -11,10 +12,19 @@ public class AudioManager : MonoBehaviour
 
     [Header("----- Audio Clip -----")]
     public AudioClip background;
+    public AudioClip backgroundOW;
 
     private void Start()
     {
-        musicSource.clip = background;
+        if (SceneManager.GetActiveScene().name == "Overworld")
+        {
+            musicSource.clip = backgroundOW;
+        }
+        else
+        {
+            musicSource.clip = background;
+        }
+
         musicSource.Play();
     }
 

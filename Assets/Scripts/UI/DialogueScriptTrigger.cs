@@ -108,5 +108,6 @@ public class DialogueScriptTrigger : MonoBehaviour
         Time.timeScale = 1;
         dialogueBoxTriggered.SetActive(false);
         isDialogueActive = false;
+        Destroy(gameObject);
     }
 }

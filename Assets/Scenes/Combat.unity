@@ -616,6 +616,7 @@ GameObject:
   - component: {fileID: 351652122}
   - component: {fileID: 351652121}
   - component: {fileID: 351652120}
+  - component: {fileID: 351652124}
   m_Layer: 0
   m_Name: gameManager
   m_TagString: Untagged
@@ -765,6 +766,20 @@ Transform:
   - {fileID: 2093769096}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &351652124
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 351652119}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef6792c4e6c735f4fb3c1da30a596f28, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pauseMenu: {fileID: 1121569744}
+  settingsMenu: {fileID: 662493599}
 --- !u!1 &353969620 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6892430873826997279, guid: b1dec7fc77d37434698184dcec86eda7, type: 3}
@@ -2370,20 +2385,20 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 778145875}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1121569745}
   - {fileID: 662493600}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 2138885880}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 960, y: 540}
+  m_SizeDelta: {x: 1920, y: 1080}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &778145880
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6438,7 +6453,7 @@ PrefabInstance:
     - target: {fileID: 4766829302411553754, guid: fb6b7a2a45cd6bb46b305db1ee76727f, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 351652124}
     - target: {fileID: 4766829302411553754, guid: fb6b7a2a45cd6bb46b305db1ee76727f, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: ResumeGame
@@ -6446,7 +6461,7 @@ PrefabInstance:
     - target: {fileID: 5296704400748906588, guid: fb6b7a2a45cd6bb46b305db1ee76727f, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 351652124}
     - target: {fileID: 5296704400748906588, guid: fb6b7a2a45cd6bb46b305db1ee76727f, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: ReturnToMenu
@@ -7834,6 +7849,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 323053983}
+  - {fileID: 778145879}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -7921,7 +7937,6 @@ SceneRoots:
   - {fileID: 945194384}
   - {fileID: 351652123}
   - {fileID: 747749725}
-  - {fileID: 778145879}
   - {fileID: 1378368566}
   - {fileID: 1032470868}
   - {fileID: 1790114483}

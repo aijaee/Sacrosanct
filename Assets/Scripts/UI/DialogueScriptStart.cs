@@ -11,6 +11,7 @@ public class DialogueScriptStart : MonoBehaviour
     public Image nameComponent;             // For the character's name
     public Image characterImage;            // For the character's sprite
     public GameObject overworldControls;
+    public GameObject crow;
 
     [Header("Dialogue Settings")]
     public string[] lines;                  // Dialogue lines
@@ -131,6 +132,7 @@ public class DialogueScriptStart : MonoBehaviour
 
     public void CloseControlsOverworld()
     {
+        Destroy(crow);
         overworldControls.SetActive(false);
         Time.timeScale = 1f;
     }
