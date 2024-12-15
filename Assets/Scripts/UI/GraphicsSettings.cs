@@ -23,7 +23,7 @@ public class GraphicsSettings : MonoBehaviour
     private int displayModeIndex = 0;
     private int renderingResolutionIndex = 0;
 
-    private string[] resolutions = { "1280 x 720", "1366 x 768", "1920x1080" };
+    private string[] resolutions = { "1920x1080", "1366 x 768", "1280 x 720" };
     private string[] displayModes = { "Fullscreen", "Windowed" };
     private string[] renderingResolutions = { "Low", "Medium", "High" };
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using System.Xml;
 
 public class DialogueScriptStart : MonoBehaviour
 {
@@ -11,13 +12,15 @@ public class DialogueScriptStart : MonoBehaviour
     public Image nameComponent;             // For the character's name
     public Image characterImage;            // For the character's sprite
     public GameObject overworldControls;
+    public GameObject startDialogueBox;
     public GameObject crow;
+    public GameObject crowRock;
 
     [Header("Dialogue Settings")]
     public string[] lines;                  // Dialogue lines
     public Sprite[] characterNames;         // Corresponding character names
     public Sprite[] characterSprites;       // Corresponding character sprites
-    public float textSpeed;                 // Speed of text animation
+    public float textSpeed;                 // Speed of text 
 
     private int index;                      // Current dialogue index
     private bool isDialogueActive = false;  // Tracks if dialogue is active
@@ -25,8 +28,15 @@ public class DialogueScriptStart : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        // Start the dialogue manually if required
-        StartDialogue();
+        if (!PlayerPrefs.HasKey("StartDialogueActivated"))
+        {
+            StartDialogue();
+        }
+        else
+        {
+            Destroy(crow);
+            crowRock.SetActive(true);
+        }
     }
 
     void Update()
@@ -54,7 +64,7 @@ public class DialogueScriptStart : MonoBehaviour
         isDialogueActive = true;
 
         // Reset UI and initialize
-        gameObject.SetActive(true);
+        startDialogueBox.SetActive(true);
         textComponent.text = string.Empty;
         nameComponent.sprite = null;
         characterImage.sprite = null;
@@ -62,6 +72,9 @@ public class DialogueScriptStart : MonoBehaviour
 
         UpdateCharacterInfo();
         StartCoroutine(TypeLine());
+
+        PlayerPrefs.SetInt("StartDialogueActivated", 1);
+        PlayerPrefs.Save();
     }
 
     IEnumerator TypeLine()
@@ -95,7 +108,7 @@ public class DialogueScriptStart : MonoBehaviour
         Time.timeScale = 0f;
 
         // Hide dialogue UI
-        gameObject.SetActive(false);
+        startDialogueBox.SetActive(false);
 
         // Activate overworld controls
         if (overworldControls != null)
@@ -133,6 +146,7 @@ public class DialogueScriptStart : MonoBehaviour
     public void CloseControlsOverworld()
     {
         Destroy(crow);
+        crowRock.SetActive(true);
         overworldControls.SetActive(false);
         Time.timeScale = 1f;
     }

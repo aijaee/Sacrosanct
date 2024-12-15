@@ -5,7 +5,8 @@ using TMPro;
 using UnityEngine.UI;
 
 public class DialogueScriptTrigger : MonoBehaviour
-{
+{ 
+
     [Header("UI Components")]
     public TextMeshProUGUI textComponent;
     public Image nameComponent;
@@ -18,12 +19,15 @@ public class DialogueScriptTrigger : MonoBehaviour
     public Sprite[] characterSprites;
     public float textSpeed;
 
+    [Header("Unique ID")]
+    public string uniqueID; // Assign a unique ID to each trigger
+
     private int index;
     private bool isDialogueActive = false;
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player") && !isDialogueActive)
+        if (other.CompareTag("Player") && !isDialogueActive && !PlayerPrefs.HasKey("Dialogue_" + uniqueID))
         {
             StartDialogue();
         }
@@ -40,6 +44,10 @@ public class DialogueScriptTrigger : MonoBehaviour
         characterImage.sprite = null;
         UpdateCharacterInfo();
         StartCoroutine(TypeLine());
+
+        // Save that this dialogue has been triggered
+        PlayerPrefs.SetInt("Dialogue_" + uniqueID, 1);
+        PlayerPrefs.Save();
     }
 
     void Update()
